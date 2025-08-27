@@ -44,7 +44,7 @@ os.environ['SSL_CERT_FILE'] = certifi.where()
 # Define auxiliary functions
 ## A function to extract contol IDs
 def extract_control_ids(query: str):
-    return re.findall(r'\b\d+(?:-\d+){0,3}\b', query)
+    return re.findall(r'\b\d+(?:.\d+){0,3}\b', query)
 
 
 ## A function to normalize IDs
