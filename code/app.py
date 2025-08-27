@@ -7,11 +7,13 @@ from agent_prep import get_agent_response, initialize_agent
 if 'language' not in st.session_state:
     st.session_state.language = 'en'  # Default language is English
 if 'agent' not in st.session_state:
-    st.session_state.agent = initialize_agent() # Initialize the agent once
+    st.session_state.agent, _ = initialize_agent() # Initialize the agent once
 if 'config' not in st.session_state:
     st.session_state.config = {"configurable": {"thread_id": "streamlit_session"}}
 if 'chat_history' not in st.session_state:
     st.session_state.chat_history = []
+if 'messages' not in st.session_state:
+    st.session_state.messages = []
 # ========== Text Translations ==========
 translations = {
     'en': {
@@ -97,7 +99,7 @@ st.markdown("""
     
     /* Style for chat input */
     .stChatInput > div > div > input {
-        background-color: #0a1128 !important; /* Match the dark blue background */
+        background-color: rgba(10, 17, 40, 0.8) !important; /* Dark background with some transparency */
         color: white !important; /* Text color for better contrast */
         border: 1px solid #4a90e2 !important;
         border-radius: 10px !important;
@@ -112,8 +114,8 @@ col1, col2, col3 = st.columns([1, 5, 1])
 
 # Display the icon on the left
 with col1:
-    if os.path.exists("123.jpg"):
-        st.image("123.jpg", width=90, caption="", clamp=True, output_format="auto")
+    nca_logo_path = os.path.join(os.path.dirname(__file__), 'static', 'NCA logo.jpg')
+    st.image(nca_logo_path, width=90, caption="", clamp=True, output_format="auto")
 
 # Language toggle button on the right
 with col3:
@@ -145,19 +147,28 @@ if prompt := st.chat_input(get_text('input_placeholder')):
     # Add user message to chat history
     st.session_state.messages.append({"role": "user", "content": prompt})
     
-    # Simulate thinking delay for better UX
-    import time
+    # Get response from the agent
     with st.chat_message("assistant"):
         message_placeholder = st.empty()
-        full_response = f"Thank you for your question: '{prompt}'. This is a simulated response from the GRC Agent."
+        # Show a temporary message while waiting for the response
+        message_placeholder.markdown("-thinking...▌")
         
-        # Simulate typing effect
-        for chunk in full_response.split():
-            message_placeholder.markdown(" ".join(full_response.split()[:full_response.split().index(chunk)+1]) + "▌")
-            time.sleep(0.05)
-        
-        # Display full response
-        message_placeholder.markdown(full_response)
+        try:
+            full_response = get_agent_response(prompt, st.session_state.agent, st.session_state.config)
+            
+            # Simulate typing effect
+            import time
+            displayed_response = ""
+            for chunk in full_response.split():
+                displayed_response += chunk + " "
+                message_placeholder.markdown(displayed_response + "▌")
+                time.sleep(0.05)
+            
+            # Display full response
+            message_placeholder.markdown(full_response)
+        except Exception as e:
+            full_response = f"An error occurred: {e}"
+            message_placeholder.markdown(full_response)
     
     # Add assistant response to chat history
     st.session_state.messages.append({"role": "assistant", "content": full_response})
